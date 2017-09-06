@@ -83,7 +83,14 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Cluster"
-              }
+              },
+              "example": [
+                {
+                  "lat": 10,
+                  "lng": 20,
+                  "count": 10
+                }
+              ]
             }
           }
         },
@@ -106,6 +113,7 @@
     "Cluster": {
       "title": "Cluster",
       "description": "Clusters summarize the number of Location Types available in an area.",
+      "type": "object",
       "properties": {
         "lng": {
           "description": "Longitude (in WGS84 decimal degrees) of the centerpoint of all included Location Types.",

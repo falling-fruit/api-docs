@@ -61,6 +61,10 @@ paths:
             type: array
             items:
               $ref: '#/definitions/Cluster'
+            example:
+              - lat: 10
+                lng: 20
+                count: 10
       security:
         - api_key: []
 securityDefinitions:
@@ -72,6 +76,7 @@ definitions:
   Cluster:
     title: Cluster
     description: Clusters summarize the number of Location Types available in an area.
+    type: object
     properties:
       lng:
         description: >-
