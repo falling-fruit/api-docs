@@ -2,18 +2,32 @@
 
 Draft documentation for the Falling Fruit API.
 
- - http://apidocjs.com/
- - https://github.com/softdevstory/node-apidoc-markdown
+## OpenApi ([Swagger](https://swagger.io/))
+
+`swagger.json` & `swagger.yaml`
+
+ - Rendered with Swagger UI: http://petstore.swagger.io/ and enter `https://raw.githubusercontent.com/falling-fruit/falling-fruit-api/master/swagger.json`
+ - Rendered with ReDoc: http://rebilly.github.io/ReDoc/?url=https://raw.githubusercontent.com/falling-fruit/falling-fruit-api/master/swagger.json
+
+## [API Blueprint](https://apiblueprint.org/)
+
+`api_blueprint.md`
+
+  - Rendered with [Aglio](https://github.com/danielgtaylor/aglio): [api_blueprint-aglio.html](./api_blueprint-aglio.html)
+  - Rendered with [Apiary](https://apiary.io/): http://docs.fallingfruit.apiary.io/
+
+## [APIDocjs](http://apidocjs.com/)
+
+`apidoc.js`
+
+  - Rendered with APIDoc: [apidoc/index.html](./apidoc/index.html)
+
+### Scratch
 
 ```
 nvm use 6.11.3
-npm install
 npm install apidoc -g
-apidoc -i . -o ./doc -f "clusters\\.js$"
-node_modules/.bin/apidoc-markdown2 -p doc/ -o DOCUMENTATION.md
+apidoc -i . -o ./apidoc -f "apidoc\\.js$"
+npm install aglio -g
+aglio -i api_blueprint.md -o api_blueprint-aglio.html
 ```
-
-https://gis.stackexchange.com/questions/8650/measuring-accuracy-of-latitude-and-longitude
-
-
-npm install redoc --save
