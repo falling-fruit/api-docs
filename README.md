@@ -33,6 +33,11 @@ npm install
 4. Changes are automatically propagated to your local server, and all documentation pages refreshed in a browser after each change
 5. Run tests with `npm test`
 
+### Resources
+
+- [OpenAPI Specification](https://swagger.io/specification/)
+- [ReDoc vendor extensions](https://github.com/Rebilly/ReDoc/blob/master/docs/redoc-vendor-extensions.md)
+
 ## Todos
 
   - [ ] Setup a [custom domain](https://help.github.com/articles/using-a-custom-domain-with-github-pages/) (`web/CNAME` file)
