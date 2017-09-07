@@ -61,10 +61,6 @@ paths:
             type: array
             items:
               $ref: '#/definitions/Cluster'
-            example:
-              - lat: 10
-                lng: 20
-                count: 10
       security:
         - api_key: []
 securityDefinitions:
@@ -83,11 +79,14 @@ definitions:
           Longitude (in WGS84 decimal degrees) of the centerpoint of all
           included Location Types.
         type: number
+        example: -123.45678
       lat:
         description: >-
           Latitude (in WGS84 decimal degrees) of the centerpoint of all included
           Location Types.
         type: number
+        example: 45.67890
       count:
         type: integer
         description: Number of Location Types.
+        example: 768
