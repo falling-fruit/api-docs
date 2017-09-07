@@ -40,6 +40,7 @@ npm install
 
 ## Todos
 
+  - [ ] Switch to OpenAPI specs 3.0.0 (and rename `swagger` to `openapi`) [once supported by ReDoc](https://github.com/Rebilly/ReDoc/issues/312)
   - [ ] Setup a [custom domain](https://help.github.com/articles/using-a-custom-domain-with-github-pages/) (`web/CNAME` file)
   - [ ] Add the API to the [APIs.guru](https://APIs.guru) directory using [this form](https://apis.guru/add-api/)
 
