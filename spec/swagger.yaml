@@ -46,10 +46,10 @@ paths:
       tags:
         - types
       summary: List all Types
-      description:
+      description: Returns all Types.
       produces:
         - application/json
-      parameters:
+      parameters: []
       responses:
         '200':
           description: Success
@@ -90,26 +90,26 @@ definitions:
     type: object
     properties:
       id:
-        description:
+        description: Unique identifier
         type: integer
         example: 14
       parent_id:
-        description:
+        description: Unique identifier of parent Type
         type: integer
         example: 114
       created_at:
-        description:
-        type: dateTime
+        description: Time of creation
+        type: string
         example: "2013-03-22T12:34:56Z"
       updated_at:
-        description:
-        type: dateTime
+        description: Time of last update
+        type: string
         example: "2017-09-20T01:23:45Z"
       pending:
         type: boolean
         example: false
       taxonomic_rank:
-        description:
+        description: Taxonomic rank
         type: integer
         example: 8
       scientific_names:
@@ -162,7 +162,7 @@ parameters:
     in: query
     description: Location Types to include, as a list of Type IDs. If empty, all Types are included.
     required: false
-    default: ''
+    default: []
     type: array
     items:
       type: integer
