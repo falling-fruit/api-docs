@@ -1,0 +1,1 @@
+define({  "url": "localhost:3100/api/0.2",  "name": "falling-fruit-api",  "version": "0.2.0",  "description": "API for Falling Fruit",  "sampleUrl": false,  "defaultVersion": "0.0.0",  "apidoc": "0.3.0",  "generator": {    "name": "apidoc",    "time": "2017-09-06T05:31:25.175Z",    "url": "http://apidocjs.com",    "version": "0.17.6"  }});

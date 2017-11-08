@@ -1,0 +1,175 @@
+swagger: '2.0'
+info:
+  title: Falling Fruit API
+  description: The Falling Fruit API provides access to the Falling Fruit database.
+  version: 0.3.0
+host: 'localhost:3100'
+basePath: /api/0.3
+tags:
+  - name: clusters
+    description: Clusters summarize the count and center of mass of each Location Type available in an area. They are computed on a nested [quadtree](https://en.wikipedia.org/wiki/Quadtree) which, at a given `zoom` level, divides the Earth into a 2<sup>zoom</sup> x 2<sup>zoom</sup> square grid.
+  - name: types
+    description: Types describe the type of thing found at a Location.
+schemes:
+  - http
+paths:
+  /clusters/cluster:
+    get:
+      tags:
+        - clusters
+      summary: Cluster clusters
+      description: Returns the total count and center of mass for the specified Types.
+      produces:
+        - application/json
+      parameters:
+        - $ref: "#/parameters/bounds"
+        - name: zoom
+          description: Zoom level of the quadtree dividing the world into a 2<sup>zoom</sup> x 2<sup>zoom</sup> grid.
+          in: query
+          required: false
+          type: integer
+          minimum: 0
+          default: 0
+        - $ref: "#/parameters/muni"
+        - $ref: "#/parameters/types"
+      responses:
+        '200':
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Cluster'
+      security:
+        - api_key: []
+  /types/all:
+    get:
+      tags:
+        - types
+      summary: List all Types
+      description: Returns all Types.
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Type'
+      security:
+        - api_key: []
+securityDefinitions:
+  api_key:
+    name: key
+    type: apiKey
+    in: query
+definitions:
+  Cluster:
+    title: Cluster
+    type: object
+    properties:
+      lng:
+        description: >-
+          Longitude (in WGS84 decimal degrees) of the centerpoint of all
+          included Location Types.
+        type: number
+        example: -123.45678
+      lat:
+        description: >-
+          Latitude (in WGS84 decimal degrees) of the centerpoint of all included
+          Location Types.
+        type: number
+        example: 45.67890
+      count:
+        type: integer
+        description: Number of Location Types.
+        example: 768
+  Type:
+    title: Type
+    type: object
+    properties:
+      id:
+        description: Unique identifier
+        type: integer
+        example: 14
+      parent_id:
+        description: Unique identifier of parent Type
+        type: integer
+        example: 114
+      created_at:
+        description: Time of creation
+        type: string
+        example: "2013-03-22T12:34:56Z"
+      updated_at:
+        description: Time of last update
+        type: string
+        example: "2017-09-20T01:23:45Z"
+      pending:
+        type: boolean
+        example: false
+      taxonomic_rank:
+        description: Taxonomic rank
+        type: integer
+        example: 8
+      scientific_names:
+        type: array
+        items:
+          type: string
+        example:
+          - Malus pumila
+          - Malus domestica
+          - Malus communis
+      common_names:
+        type: object
+        additionalProperties:
+          type: array
+          items:
+            type: string
+        example:
+          en:
+            - Apple
+            - Orchard apple
+            - Apple tree
+          fr:
+            - Pommier commun
+            - Pommier domestique
+      urls:
+        type: object
+        additionalProperties:
+          type: array
+          items:
+            type: string
+        example:
+          en:
+            - https://en.wikipedia.org/wiki/Apple
+          fr:
+            - https://fr.wikipedia.org/wiki/Pommier_domestique
+      notes:
+        type: string
+        example: "Widely cultivated for its fruit."
+parameters:
+  bounds:
+    name: bounds
+    in: query
+    description: Rectangular area designating the spatial bounds of the query. Specified as West longitude, East longitude, South latitude, and North latitude in WGS 84 decimal degrees.
+    required: true
+    type: array
+    items:
+      type: number
+  types:
+    name: types
+    in: query
+    description: Location Types to include, as a list of Type IDs. If empty, all Types are included.
+    required: false
+    default: []
+    type: array
+    items:
+      type: integer
+  muni:
+    name: muni
+    in: query
+    description: Whether to include Locations imported from municipal tree inventories.
+    required: false
+    default: true
+    type: boolean

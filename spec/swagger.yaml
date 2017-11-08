@@ -1,0 +1,93 @@
+swagger: '2.0'
+info:
+  title: Falling Fruit API
+  description: The Falling Fruit API provides access to the Falling Fruit database.
+  version: 0.2.0
+host: 'localhost:3100'
+basePath: /api/0.2
+tags:
+  - name: clusters
+    description: Summarize the number of Location Types available in an area.
+schemes:
+  - http
+paths:
+  /clusters.json:
+    get:
+      tags:
+        - clusters
+      summary: List clusters
+      produces:
+        - application/json
+      parameters:
+        - name: swlng
+          in: query
+          type: number
+        - name: nelng
+          in: query
+          type: number
+        - name: swlat
+          in: query
+          type: number
+        - name: nelat
+          in: query
+          type: number
+        - name: zoom
+          description: 'Zoom level, where the world is divided into a 2^zoom x 2^zoom grid.'
+          in: query
+          required: false
+          type: integer
+          minimum: 0
+          maximum: 12
+          default: 0
+        - name: muni
+          description: >-
+            Whether to count types at locations imported from municipal tree
+            inventories.
+          in: query
+          required: false
+          type: boolean
+          default: true
+        - name: types
+          description: IDs of types to count (or all if empty or missing).
+          in: query
+          required: false
+          type: array
+          items:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Cluster'
+            example:
+              - lat: 10
+                lng: 20
+                count: 10
+      security:
+        - api_key: []
+securityDefinitions:
+  api_key:
+    type: apiKey
+    name: api_key
+    in: query
+definitions:
+  Cluster:
+    title: Cluster
+    description: Clusters summarize the number of Location Types available in an area.
+    type: object
+    properties:
+      lng:
+        description: >-
+          Longitude (in WGS84 decimal degrees) of the centerpoint of all
+          included Location Types.
+        type: number
+      lat:
+        description: >-
+          Latitude (in WGS84 decimal degrees) of the centerpoint of all included
+          Location Types.
+        type: number
+      count:
+        type: integer
+        description: Number of Location Types.
