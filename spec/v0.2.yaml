@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Falling Fruit API
   description: |-
-    Falling Fruit is an open-technology nonprofit mapping the world's edible plants and developing online platforms to promote urban foraging and hyperlocal food. This API provides access to the Falling Fruit database. It is a work in progress and does not provide access to all possible database tables or fields. Many features on the website (https://fallingfruit.org) still rely on the older Rails API.
+    Falling Fruit is an open-technology nonprofit mapping the world's edible plants and developing online platforms to promote urban foraging and hyperlocal food. This API provides access to the Falling Fruit database. It is wonky, a work in progress, and does not provide access to all possible database tables or fields. Several features on the website (https://fallingfruit.org) still rely on the older Rails API.
 
     ### General usage
 
@@ -10,6 +10,7 @@ info:
     - Multiple values for array parameters must be separated by commas, e.g. `type_ids=1,2,3`.
     - All methods return JSON responses.
     - Success and error responses share the same code (200). All errors are formatted as `{"error": "message"}`.
+    - All possible error messages are documented for `login.json` and `logout.json`, but only partially elsewhere.
 
     ### Authentication
 
@@ -32,7 +33,6 @@ info:
     - Uploaded photos are not associated with their review.
     - Reviews are not associated with their user.               
     - Locales with region codes (e.g. `pt-br`, `zh-tw`) are ignored by common name labels, which default to English (`en`).
-
   version: '0.2'
   contact:
     email: info@fallingfruit.org
@@ -170,8 +170,6 @@ paths:
                   $ref: '#/components/examples/errorMissingBounds'
                 errorZoom:
                   $ref: '#/components/examples/errorZoom'
-      security:
-        - api_key: []
   /types.json:
     get:
       tags:
@@ -1252,8 +1250,7 @@ components:
           nullable: true
           example: A few mulberries still left in the tree.
         photo:
-          $ref: '#/components/schemas/PhotoPaths'
-            
+          $ref: '#/components/schemas/PhotoPaths'  
     PhotoPaths:
       title: Photo paths
       description: Paths to different sizes of a Photo.
