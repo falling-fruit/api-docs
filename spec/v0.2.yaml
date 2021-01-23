@@ -1,0 +1,1359 @@
+openapi: 3.0.0
+info:
+  title: Falling Fruit API
+  description: |-
+    Falling Fruit is an open-technology nonprofit mapping the world's edible plants and developing online platforms to promote urban foraging and hyperlocal food. This API provides access to the Falling Fruit database. It is a work in progress and does not provide access to all possible database tables or fields. Many features on the website (https://fallingfruit.org) still rely on the older Rails API.
+
+    ### General usage
+
+    - All parameters are passed as either path or query URL parameters, with the exception of photos, which are passed in the request body.
+    - Multiple values for array parameters must be separated by commas, e.g. `type_ids=1,2,3`.
+    - All methods return JSON responses.
+    - Success and error responses share the same code (200). All errors are formatted as `{"error": "message"}`.
+
+    ### Authentication
+
+    - All GET requests require authentication via an API key (`api_key`), available by request.
+    - All POST requests require an additional authentication token (`auth_token`).
+    - Authentication tokens are acquired by logging in with registered user credentials (`email` and `password`).
+
+    ### Notable limitations (relative to Rails API)
+
+    - Locations and reviews can only be added by registered users. In Rails, these operations can also be done anonymously.
+    - Users cannot register an account. To register an account, visit https://fallingfruit.org/users/sign_up.
+    - Users cannot flag locations.
+    - Admins cannot review and resolve flags.
+    - Types cannot be created or edited. In Rails, admins can create, edit, and merge types, while users can create pending types.
+    - Recent changes (https://fallingfruit.org/changes) cannot be fetched.
+    - External datasets (https://fallingfruit.org/datasets and, for example, https://fallingfruit.org/imports/440) cannot be fetched nor (admin-only) edited or created.
+
+    ### Known bugs
+
+    - Uploaded photos are not associated with their review.
+    - Reviews are not associated with their user.               
+    - Locales with region codes (e.g. `pt-br`, `zh-tw`) are ignored by common name labels, which default to English (`en`).
+
+  version: '0.2'
+  contact:
+    email: info@fallingfruit.org
+    url: https://fallingfruit.org
+    name: Falling Fruit
+security:
+  - api_key: []
+tags:
+  - name: Sessions
+    description: Sign in to acquire an authentication token.
+  - name: Clusters
+    description: |-
+      Clusters reduce the Locations in an area to a count and a center of mass. They are computed on a nested [quadtree](https://en.wikipedia.org/wiki/Quadtree) which, for a given zoom level, divides the Earth into a 2<sup>zoom</sup> x 2<sup>zoom</sup> grid of equal-sized squares in the Web Mercator projection (EPSG:3857).
+
+      Note that Clusters count the number of Location Types, not Locations. So, for example, a Location with two Types is counted twice.
+  - name: Locations
+    description: Locations describe resources at a particular position in the world.
+  - name: Types
+    description: Types describe the plants, fungi, or other resources present at a Location.
+  - name: Reviews
+    description: Reviews describe observations of, and opinions about, a Location.
+paths:
+  /login.json:
+    get:
+      summary: Open an authenticated session.
+      tags:
+        - Sessions
+      parameters:
+        - name: email
+          in: query
+          description: User email.
+          required: true
+          schema:
+            type: string
+            format: email
+            example: foo@bar.com
+        - name: password
+          in: query
+          description: User password.
+          required: true
+          schema:
+            type: string
+            example: password
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - type: object
+                    required:
+                      - auth_token
+                    properties:
+                      auth_token:
+                        type: string
+                  - $ref: '#/components/schemas/Error'
+              examples:
+                success:
+                  value:
+                    auth_token: wYZRwzq0WMcDF8bnvEyF
+                errorConnection:
+                  $ref: '#/components/examples/errorConnection'
+                errorMissingKey:
+                  $ref: '#/components/examples/errorMissingKey'
+                errorKey:
+                  $ref: '#/components/examples/errorKey'
+                errorEmailPassword:
+                  $ref: '#/components/examples/errorEmailPassword'
+                errorQuery:
+                  $ref: '#/components/examples/errorQuery'
+  /logout.json:
+    get:
+      tags:
+        - Sessions
+      summary: Close an authenticated session.
+      security:
+        - api_key: []
+          auth_token: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - type: object
+                  - $ref: '#/components/schemas/Error'
+              examples:
+                success:
+                  value: {}
+                errorConnection:
+                  $ref: '#/components/examples/errorConnection'
+                errorMissingKey:
+                  $ref: '#/components/examples/errorMissingKey'
+                errorKey:
+                  $ref: '#/components/examples/errorKey'
+                errorMissingToken:
+                  $ref: '#/components/examples/errorMissingToken'
+                errorToken:
+                  $ref: '#/components/examples/errorToken'
+                errorQuery:
+                  $ref: '#/components/examples/errorQuery'
+  /clusters.json:
+    get:
+      tags:
+        - Clusters
+      summary: Fetch Clusters.
+      parameters:
+        - $ref: "#/components/parameters/swlng"
+        - $ref: "#/components/parameters/nelng"
+        - $ref: "#/components/parameters/swlat"
+        - $ref: "#/components/parameters/nelat"
+        - $ref: "#/components/parameters/zoom"
+        - $ref: "#/components/parameters/muni"
+        - $ref: "#/components/parameters/t"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - type: array
+                    items:
+                      $ref: "#/components/schemas/Cluster"
+                  - $ref: '#/components/schemas/Error'
+              examples:
+                success:
+                  value:
+                    - lng: -123.45678
+                      lat: 45.6789
+                      count: 768
+                errorMissingBounds:
+                  $ref: '#/components/examples/errorMissingBounds'
+                errorZoom:
+                  $ref: '#/components/examples/errorZoom'
+      security:
+        - api_key: []
+  /types.json:
+    get:
+      tags:
+        - Types
+      summary: Fetch Type summaries.
+      parameters:
+        - name: swlng
+          description: Longitude of southwest corner in WGS84 decimal degrees. Must be used with `nelng`, `swlat`, and `nelat`. If provided, only returns (and counts) the Types of Locations within these bounds.
+          in: query
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+        - name: nelng
+          description: Longitude of northeast corner in WGS84 decimal degrees.
+          in: query
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+        - name: swlat
+          description: Latitude of southwest corner in WGS84 decimal degrees.
+          in: query
+          schema:
+            type: number
+            minimum: -85.0511
+            maximum: 85.0511
+        - name: nelat
+          description: Latitude of northeast corner in WGS84 decimal degrees.
+          in: query
+          schema:
+            type: number
+            minimum: -85.0511
+            maximum: 85.0511
+        - name: zoom
+          description: Zoom level, where the world is divided into a 2<sup>zoom</sup> x 2<sup>zoom</sup> grid. Used with `swlng`, `nelng`, `swlat`, and `nelat`. If provided, only returns (and counts) the Types of Locations whose Cluster centerpoints at this zoome level fall within the bounds.
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 12
+            default: 0
+        - name: muni
+          description: Whether to return (and count) the Types of Locations imported from municipal tree inventories.
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+            default: 0
+        - $ref: '#/components/parameters/locale'
+        - name: urls
+          in: query
+          description: Whether to return URL properties.
+          schema:
+            type: integer
+            enum: [0, 1]
+            default: 0
+        - $ref: '#/components/parameters/c'
+        - name: uncategorized
+          in: query
+          description: Whether to return uncategorized types.
+          schema:
+            type: integer
+            enum: [0, 1]
+            default: 0
+        - name: pending
+          in: query
+          description: Whether to return pending types.
+          schema:
+            type: integer
+            enum: [0, 1]
+            default: 1
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ListType"
+  /types/{id}.json:
+    get:
+      tags:
+        - Types
+      summary: Fetch a type.
+      parameters:
+        - name: id
+          in: path
+          description: Type ID
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SingleType"
+  /locations.json:
+    get:
+      tags:
+        - Locations
+      summary: Fetch Location summaries.
+      parameters:
+        - $ref: "#/components/parameters/swlng"
+        - $ref: "#/components/parameters/nelng"
+        - $ref: "#/components/parameters/swlat"
+        - $ref: "#/components/parameters/nelat"
+        - $ref: "#/components/parameters/muni"
+        - $ref: "#/components/parameters/c"
+        - $ref: "#/components/parameters/t"
+        - $ref: "#/components/parameters/locale"
+        - name: invasive
+          in: query
+          description: |
+            Whether to return Types flagged as invasive species.
+            - 0: Hides invasive species.
+            - 1: Only returns invasive species.
+          schema:
+            type: integer
+            enum: [0, 1]
+        - name: limit
+          in: query
+          description: Maximum number of Locations to return.
+          schema:
+            type: integer
+            minimum: 0
+            default: 1000
+        - name: offset
+          in: query
+          description: Offset from which to apply `limit`. 
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: reviews
+          in: query
+          description: Whether to return first Review photo (if available).
+          schema:
+            type: integer
+            enum: [0, 1]
+            default: 0
+        - name: lng
+          in: query
+          description: Longitude in WGS84 decimal degrees. Must be used with `lat`. If provided, the distance to each Location is returned.
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+        - name: lat
+          in: query
+          description: Latitude in WGS84 decimal degrees.
+          schema:
+            type: number
+            minimum: -85.0511
+            maximum: 85.0511
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - type: integer
+                      description: Number of Locations returned.
+                      minimum: 0
+                    - type: integer
+                      description: Total Locations available.
+                      minimum: 0
+                    - $ref: "#/components/schemas/ListLocation"
+    post:
+      tags:
+        - Locations
+      summary: Create a Location.
+      security:
+        - api_key: []
+          auth_token: []
+      parameters:
+        - $ref: '#/components/parameters/lng'
+        - $ref: '#/components/parameters/lat'
+        - $ref: '#/components/parameters/type_ids'
+        - $ref: '#/components/parameters/author'
+        - $ref: '#/components/parameters/description'
+        - $ref: '#/components/parameters/season_start'
+        - $ref: '#/components/parameters/season_stop'
+        - $ref: '#/components/parameters/no_season'
+        - $ref: '#/components/parameters/unverified'
+        - $ref: '#/components/parameters/access'
+        - $ref: '#/components/parameters/comment'
+        - $ref: '#/components/parameters/fruiting'
+        - $ref: '#/components/parameters/quality_rating'
+        - $ref: '#/components/parameters/yield_rating'
+        - $ref: '#/components/parameters/observed_on'
+        - $ref: '#/components/parameters/photo_file_name'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo_data:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - location_id
+                properties:
+                  location_id:
+                    description: ID of new Location.
+                    type: integer
+                    minimum: 0
+                    example: 1772262
+                  observation_id:
+                    description: ID of new Review.
+                    type: integer
+                    minimum: 0
+                    example: 47617
+                  images:
+                    $ref: '#/components/schemas/PhotoPaths'
+  /locations/{id}.json:
+    get:
+      tags:
+        - Locations
+      summary: Fetch a Location.
+      parameters:
+        - $ref: '#/components/parameters/location_id'
+        - $ref: '#/components/parameters/locale'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SingleLocation"
+    post:
+      tags:
+        - Locations
+      summary: Edit a Location.
+      security:
+        - api_key: []
+          auth_token: []
+      parameters:
+        - $ref: '#/components/parameters/location_id'
+        - $ref: '#/components/parameters/lng'
+        - $ref: '#/components/parameters/lat'
+        - $ref: '#/components/parameters/type_ids'
+        - $ref: '#/components/parameters/author'
+        - $ref: '#/components/parameters/description'
+        - $ref: '#/components/parameters/season_start'
+        - $ref: '#/components/parameters/season_stop'
+        - $ref: '#/components/parameters/no_season'
+        - $ref: '#/components/parameters/unverified'
+        - $ref: '#/components/parameters/access'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - location_id
+                properties:
+                  location_id:
+                    description: ID of new Location.
+                    type: integer
+                    minimum: 0
+                    example: 1772262
+  /locations/{id}/reviews.json:
+    get:
+      tags:
+        - Reviews
+      summary: Fetch a Location's Reviews.
+      parameters:
+        - $ref: '#/components/parameters/location_id'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+  /locations/{id}/review.json:
+    post:
+      tags:
+        - Reviews
+      security:
+        - api_key: []
+          auth_token: []
+      summary: Review a Location.
+      parameters:
+        - $ref: '#/components/parameters/location_id'
+        - $ref: '#/components/parameters/author'
+        - $ref: '#/components/parameters/comment'
+        - $ref: '#/components/parameters/fruiting'
+        - $ref: '#/components/parameters/quality_rating'
+        - $ref: '#/components/parameters/yield_rating'
+        - $ref: '#/components/parameters/observed_on'
+        - $ref: '#/components/parameters/photo_file_name'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo_data:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - location_id
+                  - observation_id
+                properties:
+                  location_id:
+                    description: ID of Location.
+                    type: integer
+                    minimum: 0
+                    example: 1772262
+                  observation_id:
+                    description: ID of new Review.
+                    type: integer
+                    minimum: 0
+                    example: 47627
+                  images:
+                    $ref: '#/components/schemas/PhotoPaths'
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: api_key
+      in: query
+    auth_token:
+      type: apiKey
+      name: auth_token
+      in: query
+  parameters:
+    swlng:
+      name: swlng
+      description: Longitude of southwest corner in WGS84 decimal degrees.
+      in: query
+      required: true
+      schema:
+        type: number
+        minimum: -180
+        maximum: 180
+    nelng:
+      name: nelng
+      description: Longitude of northeast corner in WGS84 decimal degrees.
+      in: query
+      required: true
+      schema:
+        type: number
+        minimum: -180
+        maximum: 180
+    swlat:
+      name: swlat
+      description: Latitude of southwest corner in WGS84 decimal degrees.
+      in: query
+      required: true
+      schema:
+        type: number
+        minimum: -85.0511
+        maximum: 85.0511
+    nelat:
+      name: nelat
+      description: Latitude of northeast corner in WGS84 decimal degrees.
+      in: query
+      required: true
+      schema:
+        type: number
+        minimum: -85.0511
+        maximum: 85.0511
+    zoom:
+      name: zoom
+      description: Zoom level, where the world is divided into a 2<sup>zoom</sup> x 2<sup>zoom</sup> grid.
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 12
+        default: 0
+    muni:
+      name: muni
+      description: Whether to include Locations imported from municipal tree inventories.
+      in: query
+      schema:
+        type: integer
+        enum: [0, 1]
+        default: 0
+    c:
+      name: c
+      in: query
+      description: Type categories to return.
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum: [forager, freegan, honeybee, grafter]
+        default: [forager, freegan]
+    locale:
+      name: locale
+      in: query
+      description: Locale of common name labels to return.
+      schema:
+        type: string
+        enum: [en, de, el, es, fr, he, it, nl, pl]
+        default: en
+    t:
+      name: t
+      description: IDs of Types to include (or all if empty or missing).
+      in: query
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    location_id:
+      name: id
+      in: path
+      description: Location ID.
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+    lng:
+      name: lng
+      description: Longitude in WGS84 decimal degrees.
+      in: query
+      required: true
+      schema:
+        type: number
+        minimum: -180
+        maximum: 180
+    lat:
+      name: lat
+      description: Latitude in WGS84 decimal degrees.
+      in: query
+      required: true
+      schema:
+        type: number
+        minimum: -85.0511
+        maximum: 85.0511
+    type_ids:
+      name: type_ids
+      in: query
+      description: Type IDs.
+      required: true
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+          minimum: 0
+    author:
+      name: author
+      in: query
+      description: Author name. If not provided, defaults to the User's name if the user has not opted to add locations anonymously.
+      schema:
+        type: string
+    description:
+      name: description
+      in: query
+      description: Description.
+      schema:
+        type: string
+    season_start:
+      name: season_start
+      in: query
+      description: First month in season (zero-based).
+      schema:
+        type: integer
+        enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    season_stop:
+      name: season_stop
+      in: query
+      description: Last month in season (zero-based).
+      schema:
+        type: integer
+        enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    no_season:
+      name: no_season
+      in: query
+      description: 'Whether always in season (e.g. rosemary). Equivalent to `season_stop=0` (January) and `season_stop=11` (December).'
+      schema:
+        type: boolean
+        default: false
+    unverified:
+      name: unverified
+      in: query
+      description: Whether needs verification.
+      schema:
+        type: boolean
+        default: false
+    access:
+      name: access
+      in: query
+      description: |
+        Access level.
+        - 0: Location is on my property.
+        - 1: I have permission from the owner to add this Location.
+        - 2: Location is on public land.
+        - 3: Location is on private property but overhangs public property.
+        - 4: Location is on private property.
+      schema:
+        type: integer
+        enum: [0, 1, 2, 3, 4]
+    comment:
+      name: comment
+      in: query
+      description: Review comment.
+      schema:
+        type: string
+    fruiting:
+      name: fruiting
+      in: query
+      description: |
+        Fruiting status.
+        - 0: Flowers.
+        - 1: Unripe fruit.
+        - 2: Ripe fruit.
+      schema:
+        type: integer
+        enum: [0, 1, 2]
+    quality_rating:
+      name: quality_rating
+      in: query
+      description: |
+        Quality rating.
+        - 0: Poor. 
+        - 1: Fair.
+        - 2: Good.
+        - 3: Very good.
+        - 4: Excellent.
+      schema:
+        type: integer
+        enum: [0, 1, 2, 3, 4]
+    yield_rating:
+      name: yield_rating
+      in: query
+      description: |
+        Yield rating.
+        - 0: Poor. 
+        - 1: Fair.
+        - 2: Good.
+        - 3: Very good.
+        - 4: Excellent.
+      schema:
+        type: integer
+        enum: [0, 1, 2, 3, 4]
+    observed_on:
+      name: observed_on
+      in: query
+      description: Date visited in format YYYY-MM-DD.
+      schema:
+        type: string
+        format: date
+    photo_file_name:
+      name: photo_file_name
+      in: query
+      description: Photo file basename.
+      schema:
+        type: string
+  schemas:
+    Cluster:
+      title: Cluster
+      description: Number of Locations in an area.
+      type: object
+      required:
+        - lng
+        - lat
+        - count
+      properties:
+        lng:
+          description: Longitude of the centerpoint of the Locations (in WGS84 decimal degrees).
+          type: number
+          minimum: -180
+          maximum: 180
+          example: -123.45678
+        lat:
+          description: Latitude of the centerpoint of the Locations (in WGS84 decimal degrees).
+          type: number
+          minimum: -85.0511
+          maximum: 85.0511
+          example: 45.6789
+        count:
+          type: integer
+          description: Number of Locations. Locations with multiple Types are counted as their number of Types.
+          minimum: 1
+          example: 768
+    BaseType:
+      title: Type (base)
+      description: Location type.
+      type: object
+      required:
+        - id
+        - pending
+        - scientific_name
+        - scientific_synonyms
+        - taxonomic_rank
+        - category_mask
+        - en_name
+        - en_synonyms
+        - de_name
+        - el_name
+        - es_name
+        - fr_name
+        - he_name
+        - it_name
+        - nl_name
+        - pl_name
+        - pt_br_name
+        - zh_tw_name
+      properties:
+        id:
+          description: Unique identifier.
+          type: integer
+          minimum: 0
+          example: 14
+        pending:
+          description: Whether pending admin review.
+          type: boolean
+          example: false
+        scientific_name:
+          description: |
+            Scientific name.
+            - Genus (or higher rank): Prunus
+            - Subgenus: Prunus subg. Amygdalus
+            - Species: Prunus domestica
+            - Subspecies: Prunus domestica subsp. domestica, Prunus persica var. nucipersica, Brassica oleracea var. capitata f. rubra
+            - Hybrid: Prunus x eminens, Prunus cerasus x Prunus fruticosa
+            - Cultivar: Prunus persica 'George IV', Prunus domestica subsp. domestica 'Italian', Acer truncatum x platanoides 'Keithsform'
+          type: string
+          nullable: true
+          example: Malus pumila
+        scientific_synonyms:
+          description: Scientific synonyms (comma-delimited).
+          type: string
+          nullable: true
+          example: Malus domestica, Malus communis
+        taxonomic_rank:
+          description: |
+            Taxonomic rank
+            - 0: Polyphyletic
+            - 1: Kingdom
+            - 2: Phylum
+            - 3: Class
+            - 4: Order
+            - 5: Family
+            - 6: Genus
+            - 7: Multispecies
+            - 8: Species
+            - 9: Subspecies
+          type: integer
+          minimum: 0
+          maximum: 9
+          nullable: true
+          example: 8
+        category_mask:
+          description: Categories as the decimal representation of a reverse binary mask of all possible categories [forager, freegan, honeybee, grafter]. For example, 1 ('0001' in binary) is reversed to '1000' and therefore [forager].
+          type: integer
+          minimum: 0
+          maximum: 15
+          nullable: true
+          example: 1
+        en_name:
+          description: English name.
+          type: string
+          example: Apple
+        en_synonyms:
+          description: English synonyms (comma-delimited).
+          type: string
+          nullable: true
+          example: Orchard apple, Paradise apple
+        de_name:
+          description: German name.
+          type: string
+          nullable: true
+          example: Apfel
+        el_name:
+          description: Greek name.
+          type: string
+          nullable: true
+          example: Μηλιά
+        es_name:
+          description: Spanish name.
+          type: string
+          nullable: true
+          example: Pero
+        fr_name:
+          description: French name.
+          type: string
+          nullable: true
+          example: Pommier commun
+        he_name:
+          description: Hebrew name.
+          type: string
+          nullable: true
+          example: תפוח תרבותי
+        it_name:
+          description: Italian name.
+          type: string
+          nullable: true
+          example: Melo
+        nl_name:
+          description: Dutch name.
+          type: string
+          nullable: true
+          example: Appel
+        pl_name:
+          description: Polish name.
+          type: string
+          nullable: true
+          example: Jabłoń domowa
+        pt_br_name:
+          description: Brazilian Portuguese name.
+          type: string
+          nullable: true
+          example: Maçã
+        zh_tw_name:
+          description: Taiwanese Chinese name (in traditional characters).
+          type: string
+          nullable: true
+          example: 蘋果
+        usda_symbol:
+          description: USDA symbol (TODO).
+          type: string
+          nullable: true
+          example: MAPU
+        wikipedia_url:
+          description: English Wikipedia (https://en.wikipedia.org) page.
+          type: string
+          nullable: true
+          example: https://en.wikipedia.org/wiki/Malus_domestica
+        eat_the_weeds_url:
+          description: Eat the Weeds (https://www.eattheweeds.com) page.
+          type: string
+          nullable: true
+          example: https://www.eattheweeds.com/apples-wild-crabapples
+        foraging_texas_url:
+          description: Foraging Texas (https://www.foragingtexas.com) page.
+          type: string
+          nullable: true
+          example: null
+        urban_mushrooms_url:
+          description: Urban Mushrooms (https://urbanmushrooms.com) page.
+          type: string
+          nullable: true
+          example: null
+        fruitipedia_url:
+          description: Fruitipedia (http://www.fruitipedia.com) page.
+          type: string
+          nullable: true
+          example: http://www.fruitipedia.com/2018/12/apple_malus-pumila
+    ListType:
+      title: Type (list)
+      allOf:
+        - $ref: '#/components/schemas/BaseType'
+        - type: object
+          required:
+            - name
+          properties:
+            name:
+              description: Common name in requested locale.
+              type: string
+              nullable: true
+              example: Apple
+            count:
+              description: Number of Locations with Type in bounds at the requested zoom level.
+              type: integer
+              minimum: 1
+              example: 3201
+    SingleType:
+      title: Type (single)
+      allOf:
+        - $ref: '#/components/schemas/BaseType'
+        - type: object
+          required:
+            - usda_symbol
+            - wikipedia_url
+            - eat_the_weeds_url
+            - foraging_texas_url
+            - urban_mushrooms_url
+            - fruitipedia_url
+            - created_at
+            - updated_at
+            - parent_id
+            - edibility
+            - ar_name
+            - sk_name
+            - sv_name
+            - tr_name
+            - notes
+          properties:
+            created_at:
+              description: Date and time of creation in format YYYY-MM-DDThh:mm:ss.sssZ.
+              type: string
+              format: date-time
+              example: '2013-01-25T22:10:15.911Z'
+            updated_at:
+              description: Date and time of last update in format YYYY-MM-DDThh:mm:ss.sssZ.
+              type: string
+              format: date-time
+              example: '2016-07-28T06:17:34.546Z'
+            parent_id:
+              description: Type ID of taxonomic parent.
+              type: integer
+              nullable: true
+              example: 114
+            edibility:
+              description: |
+                Edibility rating.
+                - -1: Not worth it (or toxic) 
+                - 1: Include
+                - 2: Maybe include
+              type: integer
+              enum: [-1, 1, 2]
+              nullable: true
+              example: 1
+            ar_name:
+              description: Arabic name.
+              type: string
+              nullable: true
+              example: تفاح
+            sk_name:
+              description: Slovak name.
+              type: string
+              nullable: true
+              example: Jablko
+            sv_name:
+              description: Slovene name.
+              type: string
+              nullable: true
+              example: Jabolko
+            tr_name:
+              description: Turkish name.
+              type: string
+              nullable: true
+              example: Elma
+            notes:
+              description: Admin notes.
+              type: string
+              nullable: true
+              example: null
+    BaseLocation:
+      title: Location (base)
+      description: Location.
+      type: object
+      required:
+        - id
+        - lng
+        - lat
+        - type_ids
+        - type_names
+        - author
+        - unverified
+      properties:
+        id:
+          description: Unique identifier
+          type: integer
+          minimum: 0
+          example: 3383
+        lng:
+          description: Longitude in WGS84 decimal degrees.
+          type: number
+          minimum: -180
+          maximum: 180
+          example: -105.26319
+        lat:
+          description: Latitude in WGS84 decimal degrees.
+          type: number
+          minimum: -85.0511
+          maximum: 85.0511
+          example: 40.0406
+        type_ids:
+          description: Type IDs.
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          example: [97, 92]
+        type_names:
+          description: Type common names in requested locale.
+          type: array
+          items:
+            type: string
+            nullable: true
+          example: [Mulberry, White mulberry]
+        author:
+          description: Author name.
+          type: string
+          nullable: true
+          example: Ethan
+        unverified:
+          description: Whether suspected to be wrong in some way and requires verification.
+          type: boolean
+          example: false
+    ListLocation:
+      title: Location (list)
+      allOf:
+        - $ref: '#/components/schemas/BaseLocation'
+        - type: object
+          required:
+            - sort
+          properties:
+            sort:
+              description: Whether Type matched query (0) or not (1).
+              type: integer
+              enum: [0, 1]
+              example: 1
+            photo_file_name:
+              description: Photo basename.
+              type: string
+              nullable: true
+              example: 'open-uri20131213-3992-1szjh9k.jpg'
+            photo:
+              $ref: '#/components/schemas/PhotoPaths'
+            distance:
+              description: Distance in meters from provided centerpoint.
+              type: number
+              minimum: 0
+              example: 47.915
+    SingleLocation:
+      title: Location (single)
+      allOf:
+        - $ref: '#/components/schemas/BaseLocation'
+        - type: object
+          required:
+            - access
+            - address
+            - city
+            - state
+            - country
+            - description
+            - muni
+            - num_reviews
+            - photos
+          properties:
+            access:
+              description: |
+                Access level.
+                - 0: Location is on my property.
+                - 1: I have permission from the owner to add this Location.
+                - 2: Location is on public land.
+                - 3: Location is on private property but overhangs public property.
+                - 4: Location is on private property.
+              type: integer
+              enum: [0, 1, 2, 3, 4]
+              nullable: true
+              example: 3
+            address:
+              description: Address. Provided for imported locations whose coordinates had to be geocoded from an address.
+              type: string
+              nullable: true
+              example: '748 10th Street, Boulder CO 80302, USA'
+            city:
+              description: City (reverse-geocoded from coordinates).
+              type: string
+              nullable: true
+              example: Boulder
+            state:
+              description: State (reverse-geocoded from coordinates).
+              type: string
+              nullable: true
+              example: Colorado
+            country:
+              description: County (reverse-geocoded from coordinates).
+              type: string
+              nullable: true
+              example: United States
+            description:
+              description: Description.
+              type: string
+              nullable: true
+              example: Two mulberry trees with a few low branches overhanging the sidewalk.
+            muni:
+              description: Whether imported from a municipal tree inventory.
+              type: boolean
+              example: false
+            num_reviews:
+              description: Number of reviews.
+              type: integer
+              minimum: 0
+              example: 1
+            photos:
+              description: Review photos.
+              type: array
+              items:
+                $ref: '#/components/schemas/Photo'
+    Review:
+      title: Review
+      description: Observations of and opinions about a Location.
+      type: object
+      required:
+        - id
+        - location_id
+        - comment
+        - observed_on
+        - fruiting
+        - quality_rating
+        - yield_rating
+        - author
+        - photo_file_name
+        - photo_caption
+        - photo
+      properties:
+        id:
+          description: Review ID.
+          type: integer
+          minimum: 0
+          example: 6179
+        location_id:
+          description: Location ID.
+          type: integer
+          minimum: 0
+          example: 3383
+        comment:
+          description: Comment.
+          type: string
+          nullable: true
+          example: The sidewalk is stained red with mulberries.
+        observed_on:
+          description: Date and time visited in format YYYY-MM-DDThh:mm:ss.sssZ.
+          type: string
+          format: date-time
+          nullable: true
+          example: '2014-06-19T00:00:00.000Z'
+        fruiting:
+          description: Fruiting status.
+          type: integer
+          enum: [0, 1, 2]
+          example: 2
+          nullable: true
+        quality_rating:
+          description: Quality rating.
+          type: integer
+          enum: [0, 1, 2, 3, 4]
+          nullable: true
+          example: 2
+        yield_rating:
+          description: Yield rating.
+          type: integer
+          enum: [0, 1, 2, 3, 4]
+          nullable: true
+          example: 3
+        author:
+          description: Author name.
+          type: string
+          nullable: true
+          example: Ethan
+        photo_file_name:
+          description: Original photo file name.
+          type: string
+          nullable: true
+          example: '140619_8885.JPG'
+        photo_caption:
+          description: Photo caption.
+          type: string
+          nullable: true
+          example: A few mulberries still left in the tree.
+        photo:
+          $ref: '#/components/schemas/PhotoPaths'
+            
+    PhotoPaths:
+      title: Photo paths
+      description: Paths to different sizes of a Photo.
+      type: object
+      required:
+        - medium
+        - original
+        - thumb
+      properties:
+        medium:
+          description: Path to medium size file.
+          type: string
+          format: uri
+          example: 'http://s3-us-west-2.amazonaws.com/fallingfruit-production/observations/photos/000/002/745/medium/open-uri20131213-3992-1szjh9k.jpg'
+        original:
+          description: Path to original file.
+          type: string
+          format: uri
+          example: 'http://s3-us-west-2.amazonaws.com/fallingfruit-production/observations/photos/000/002/745/original/open-uri20131213-3992-1szjh9k.jpg'
+        thumb:
+          description: Path to thumbnail.
+          type: string
+          format: uri
+          example: 'http://s3-us-west-2.amazonaws.com/fallingfruit-production/observations/photos/000/002/745/thumb/open-uri20131213-3992-1szjh9k.jpg'
+    Photo:
+      title: Photo
+      description: Review photo.
+      type: object
+      required:
+        - id
+        - photo_updated_at
+        - photo_file_name
+        - photo
+      properties:
+        id:
+          description: Unique identifier
+          type: integer
+          minimum: 0
+          example: 2745
+        photo_updated_at:
+          description: Date and time of last update in format YYYY-MM-DDThh:mm:ss.sssZ.
+          type: string
+          format: date-time
+          example: '2013-12-13T06:09:22.383Z'
+        photo_file_name:
+          description: Basename.
+          type: string
+          example: 'open-uri20131213-3992-1szjh9k.jpg'
+        photo:
+          $ref: '#/components/schemas/PhotoPaths'
+    Error:
+      title: Error
+      description: Error response.
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          description: Error message.
+          type: string
+          example: bad email or password
+  examples:
+    errorConnection:
+      summary: error (connection)
+      value:
+        error: error fetching client from pool
+    errorMissingKey:
+      summary: error (missing api key)
+      value:
+        error: api key missing
+    errorKey:
+      summary: error (api key)
+      value:
+        error: api key is invalid
+    errorEmailPassword:
+      summary: error (email or password)
+      value:
+        error: bad email or password
+    errorMissingToken:
+      summary: error (missing token)
+      value:
+        error: authentication (auth_token) required
+    errorToken:
+      summary: error (token)
+      value:
+        error: auth token is invalid
+    errorQuery:
+      summary: error (generic)
+      value:
+        error: error running query
+    errorMissingBounds:
+      summary: error (missing bounds)
+      value:
+        error: bounding box not defined
+    errorZoom:
+      summary: error (zoom)
+      value:
+        error: 'zoom must be in the interval [0, 12]'
+servers:
+  - description: SwaggerHub mock server.
+    url: https://virtserver.swaggerhub.com/ezwelty/falling-fruit-api/0.2
+  - description: Falling Fruit production server.
+    url: https://fallingfruit.org/api/0.2
