@@ -218,7 +218,7 @@ paths:
           schema:
             type: integer
             enum: [0, 1]
-            default: 0
+            default: 1
         - $ref: '#/components/parameters/locale'
         - name: urls
           in: query
@@ -577,7 +577,7 @@ components:
       schema:
         type: integer
         enum: [0, 1]
-        default: 0
+        default: 1
     c:
       name: c
       in: query
