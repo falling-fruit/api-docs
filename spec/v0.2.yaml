@@ -31,7 +31,6 @@ info:
     ### Known bugs
 
     - Uploaded photos are not associated with their review.
-    - Reviews are not associated with their user.               
     - Locales with region codes (e.g. `pt-br`, `zh-tw`) are ignored by common name labels, which default to English (`en`).
   version: '0.2'
   contact:
