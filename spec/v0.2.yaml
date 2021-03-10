@@ -1213,6 +1213,7 @@ components:
       required:
         - id
         - location_id
+        - user_id
         - comment
         - observed_on
         - created_at
@@ -1235,6 +1236,12 @@ components:
           type: integer
           minimum: 0
           example: 3383
+        user_id:
+          description: User ID.
+          type: integer
+          nullable: true
+          minimum: 0
+          example: 1
         comment:
           description: Comment.
           type: string
