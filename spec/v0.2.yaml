@@ -672,7 +672,7 @@ components:
     no_season:
       name: no_season
       in: query
-      description: 'Whether always in season (e.g. rosemary). Equivalent to `season_stop=0` (January) and `season_stop=11` (December).'
+      description: 'Whether always in season (e.g. rosemary). Equivalent to `season_start=0` (January) and `season_stop=11` (December).'
       schema:
         type: boolean
         default: false
