@@ -1126,6 +1126,11 @@ components:
             - muni
             - num_reviews
             - photos
+            - season_start
+            - season_stop
+            - no_season
+            - created_at
+            - updated_at
           properties:
             access:
               description: |
@@ -1178,6 +1183,30 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Photo'
+            season_start:
+              description: First month in season (zero-based).
+              type: integer
+              enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+              example: 6
+            season_stop:
+              description: Last month in season (zero-based).
+              type: integer
+              enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+              example: 8
+            no_season:
+              description: 'Whether always in season (e.g. rosemary). Equivalent to `season_start=0` (January) and `season_stop=11` (December).'
+              type: boolean
+              example: false
+            created_at:
+              description: Date and time created.
+              type: string
+              format: date-time
+              example: '2014-06-19T01:02:03.456Z'
+            updated_at:
+              description: Date and time last updated.
+              type: string
+              format: date-time
+              example: '2014-07-20T12:34:56.789Z'
     Review:
       title: Review
       description: Observations of and opinions about a Location.
@@ -1187,6 +1216,8 @@ components:
         - location_id
         - comment
         - observed_on
+        - created_at
+        - updated_at
         - fruiting
         - quality_rating
         - yield_rating
@@ -1216,6 +1247,16 @@ components:
           format: date-time
           nullable: true
           example: '2014-06-19T00:00:00.000Z'
+        created_at:
+          description: Date and time created.
+          type: string
+          format: date-time
+          example: '2014-06-19T01:02:03.456Z'
+        updated_at:
+          description: Date and time last updated.
+          type: string
+          format: date-time
+          example: '2014-07-20T12:34:56.789Z'
         fruiting:
           description: Fruiting status.
           type: integer
@@ -1250,7 +1291,7 @@ components:
           nullable: true
           example: A few mulberries still left in the tree.
         photo:
-          $ref: '#/components/schemas/PhotoPaths'  
+          $ref: '#/components/schemas/PhotoPaths'
     PhotoPaths:
       title: Photo paths
       description: Paths to different sizes of a Photo.
