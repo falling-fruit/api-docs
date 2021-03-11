@@ -1397,7 +1397,9 @@ components:
       value:
         error: 'zoom must be in the interval [0, 12]'
 servers:
-  - description: SwaggerHub mock server.
-    url: https://virtserver.swaggerhub.com/ezwelty/falling-fruit-api/0.2
+  - description: Falling Fruit test server.
+    url: https://fallingfruit.org/test-api/0.2
   - description: Falling Fruit production server.
     url: https://fallingfruit.org/api/0.2
+  - description: SwaggerHub mock server.
+    url: https://virtserver.swaggerhub.com/ezwelty/falling-fruit-api/0.2
