@@ -31,7 +31,6 @@ info:
     ### Known bugs
 
     - Uploaded photos are not associated with their review.
-    - Locales with region codes (e.g. `pt-br`, `zh-tw`) are ignored by common name labels, which default to English (`en`).
   version: '0.2'
   contact:
     email: info@fallingfruit.org
@@ -594,7 +593,7 @@ components:
       description: Locale of common name labels to return.
       schema:
         type: string
-        enum: [en, de, el, es, fr, he, it, nl, pl]
+        enum: [en, de, el, es, fr, he, it, nl, pl, pt_br, zh_tw]
         default: en
     t:
       name: t
