@@ -39,6 +39,8 @@ info:
 security:
   - api_key: []
 tags:
+  - name: Users
+    description: Register a new user.
   - name: Sessions
     description: Sign in to acquire an authentication token.
   - name: Clusters
@@ -53,6 +55,64 @@ tags:
   - name: Reviews
     description: Reviews describe observations of, and opinions about, a Location.
 paths:
+  /users.json:
+    post:
+      summary: Register a new user.
+      tags:
+        - Users
+      parameters:
+        - name: email
+          in: query
+          description: User email.
+          required: true
+          schema:
+            type: string
+            format: email
+            example: foo@bar.com
+        - name: password
+          in: query
+          description: User password.
+          required: true
+          schema:
+            type: string
+            example: password
+        - name: name
+          in: query
+          description: User name.
+          required: false
+          schema:
+            type: string
+            example: Ethan
+        - name: add_anonymously
+          in: query
+          description: Whether the user's `name` should be displayed as the author name on locations and reviews added by this user.
+          schema:
+            default: false
+            example: false
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - type: object
+                    required:
+                      - auth_token
+                    properties:
+                      auth_token:
+                        type: string
+                  - $ref: '#/components/schemas/Error'
+              examples:
+                success:
+                  value:
+                    auth_token: wYZRwzq0WMcDF8bnvEyF
+                missingEmailPassword:
+                  value:
+                    error: Email or password are not defined.
+                emailAlreadyExists:
+                  value:
+                    error: Email already exists.
   /login.json:
     get:
       summary: Open an authenticated session.
