@@ -21,7 +21,7 @@ info:
     ### Notable limitations (relative to Rails API)
 
     - Locations and reviews can only be added by registered users. In Rails, these operations can also be done anonymously.
-    - Users cannot register an account. To register an account, visit https://fallingfruit.org/users/sign_up.
+    - New user emails are not confirmed (the website uses a confirmation email).
     - Users cannot flag locations.
     - Admins cannot review and resolve flags.
     - Types cannot be created or edited. In Rails, admins can create, edit, and merge types, while users can create pending types.
