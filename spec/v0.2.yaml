@@ -228,6 +228,79 @@ paths:
                   $ref: '#/components/examples/errorMissingBounds'
                 errorZoom:
                   $ref: '#/components/examples/errorZoom'
+  /types/counts.json:
+    get:
+      tags:
+        - Types
+      summary: Fetch type counts.
+      parameters:
+        - name: swlng
+          description: Longitude of southwest corner in WGS84 decimal degrees. Must be used with `nelng`, `swlat`, and `nelat`. If provided, only returns (and counts) the Types of Locations within these bounds.
+          in: query
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+        - name: nelng
+          description: Longitude of northeast corner in WGS84 decimal degrees.
+          in: query
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+        - name: swlat
+          description: Latitude of southwest corner in WGS84 decimal degrees.
+          in: query
+          schema:
+            type: number
+            minimum: -85.0511
+            maximum: 85.0511
+        - name: nelat
+          description: Latitude of northeast corner in WGS84 decimal degrees.
+          in: query
+          schema:
+            type: number
+            minimum: -85.0511
+            maximum: 85.0511
+        - name: zoom
+          description: Zoom level, where the world is divided into a 2<sup>zoom</sup> x 2<sup>zoom</sup> grid. Used with `swlng`, `nelng`, `swlat`, and `nelat`. If provided, only returns (and counts) the Types of Locations whose Cluster centerpoints at this zoom level fall within the bounds. Otherwise, an exact count is performed using Location coordinates.
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 12
+            default: null
+        - name: muni
+          description: Whether to return (and count) the Types of Locations imported from municipal tree inventories.
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+            default: 1
+        - $ref: '#/components/parameters/c'
+        - name: uncategorized
+          in: query
+          description: Whether to return uncategorized types.
+          schema:
+            type: integer
+            enum: [0, 1]
+            default: 0
+        - name: pending
+          in: query
+          description: Whether to return pending types.
+          schema:
+            type: integer
+            enum: [0, 1]
+            default: 1
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TypeCount"
   /types.json:
     get:
       tags:
@@ -263,7 +336,7 @@ paths:
             minimum: -85.0511
             maximum: 85.0511
         - name: zoom
-          description: Zoom level, where the world is divided into a 2<sup>zoom</sup> x 2<sup>zoom</sup> grid. Used with `swlng`, `nelng`, `swlat`, and `nelat`. If provided, only returns (and counts) the Types of Locations whose Cluster centerpoints at this zoome level fall within the bounds.
+          description: Zoom level, where the world is divided into a 2<sup>zoom</sup> x 2<sup>zoom</sup> grid. Used with `swlng`, `nelng`, `swlat`, and `nelat`. If provided, only returns (and counts) the Types of Locations whose Cluster centerpoints at this zoom level fall within the bounds.
           in: query
           schema:
             type: integer
@@ -1169,6 +1242,24 @@ components:
               type: number
               minimum: 0
               example: 47.915
+    TypeCount:
+      title: Type count
+      description: Number of Location Types in an area.
+      type: object
+      required:
+        - id
+        - count
+      properties:
+        id:
+          type: integer
+          description: Type ID.
+          minimum: 0
+          example: 1
+        count:
+          type: integer
+          description: Number of Locations with that Type ID.
+          minimum: 1
+          example: 12
     SingleLocation:
       title: Location (single)
       allOf:
