@@ -843,6 +843,7 @@ components:
       type: object
       required:
         - id
+        - parent_id
         - pending
         - scientific_name
         - scientific_synonyms
@@ -866,6 +867,11 @@ components:
           type: integer
           minimum: 0
           example: 14
+        parent_id:
+          description: Type ID of taxonomic parent.
+          type: integer
+          nullable: true
+          example: 114
         pending:
           description: Whether pending admin review.
           type: boolean
@@ -1033,7 +1039,6 @@ components:
             - fruitipedia_url
             - created_at
             - updated_at
-            - parent_id
             - edibility
             - ar_name
             - sk_name
@@ -1051,11 +1056,6 @@ components:
               type: string
               format: date-time
               example: '2016-07-28T06:17:34.546Z'
-            parent_id:
-              description: Type ID of taxonomic parent.
-              type: integer
-              nullable: true
-              example: 114
             edibility:
               description: |
                 Edibility rating.
