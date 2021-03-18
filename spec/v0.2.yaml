@@ -276,7 +276,7 @@ paths:
           schema:
             type: integer
             enum: [0, 1]
-            default: 1
+            default: 0
         - $ref: '#/components/parameters/c'
         - name: uncategorized
           in: query
@@ -291,7 +291,7 @@ paths:
           schema:
             type: integer
             enum: [0, 1]
-            default: 1
+            default: 0
       responses:
         '200':
           description: Success
@@ -372,7 +372,7 @@ paths:
           schema:
             type: integer
             enum: [0, 1]
-            default: 1
+            default: 0
       responses:
         '200':
           description: Success
@@ -708,7 +708,7 @@ components:
       schema:
         type: integer
         enum: [0, 1]
-        default: 1
+        default: 0
     c:
       name: c
       in: query
