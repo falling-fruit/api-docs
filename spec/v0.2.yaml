@@ -1222,14 +1222,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseLocation'
         - type: object
-          required:
-            - sort
           properties:
-            sort:
-              description: Whether Type matched query (0) or not (1).
-              type: integer
-              enum: [0, 1]
-              example: 1
             photo_file_name:
               description: Photo basename.
               type: string
